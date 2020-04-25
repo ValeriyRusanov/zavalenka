@@ -1,0 +1,20 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css.zaval">
+    <form action="start_game.php" method=POST>
+    <script src="cookie.js"></script>
+    <script>
+    	function apply(){
+			setCookie("player_name", document.getElementById("first_name").value, "none");
+			document.getElementById("game"); 
+    	}
+    </script>
+</head>
+
+<h2> Интеллектуальная завалинка </h2>
+<p> Напиши тут слова и определения </h3>
+<textarea type=text id="words" value=""></textarea><br>"
+<input value="Создать новую игру" type=submit>
+<input type=submit value="Отправить">
+</html>

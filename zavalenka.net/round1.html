@@ -1,0 +1,62 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css.zaval">
+    <form action="round1.php" method=POST>
+    <script src="cookie.js"></script>
+    <script>
+    	function getWordsRound1()
+    	{
+		    var xmlHttp = new XMLHttpRequest();
+		    xmlHttp.open( "GET", "getWordsRound1.php", false ); // false for synchronous request
+		    xmlHttp.send( null );
+		    let resp = JSON.parse(xmlHttp.responseText);
+		    var gameDiv = document.getElementById("game");
+		    for ( var i = 0; i < resp.length; ++i)
+		    {
+				var div = document.createElement("div");
+				div.innerHTML = "<p id=\"word" + i + "\">" + resp[i] + "</p>" + 
+		                  "<input type=text id=\"word" + i + "_definition\" value=\"\"></input><br>";
+		        gameDiv.appendChild( div );
+		    }
+    	}
+    	function setUserName(){
+    		//alert( getCookie("player_name"));
+			let value = document.getElementById("player_name").innerHTML;
+			document.getElementById("player_name").innerHTML = getCookie("player_name") + ", " + value;
+    	}
+    	function onLoad(){
+    		setUserName();
+    		getWordsRound1();
+    	}
+    	function finishRound1()
+    	{
+    		let json = new Object();
+    		json["user"] = getCookie("user");
+    		json["userName"] = getCookie("player_name");
+    		json["words"] = new Object();
+    		var words = json["words"];
+    		for ( var i = 0; i < 5; ++i)
+		    {
+				var word = document.getElementById("word" + i);
+				var wordDef= document.getElementById("word" + i + "_definition");
+				words[word.id] = wordDef.value;
+		    }
+		    
+		    var xmlHttp = new XMLHttpRequest();
+		    xmlHttp.open( "POST", "round1.php", false ); // false for synchronous request
+		    xmlHttp.send( json );
+
+		    window.location.href = 'round2.html'
+    	}
+    </script>
+</head>
+<body onload="onLoad()">
+
+	<h2> Интеллектуальная завалинка </h2>
+	<h3 id="player_name">на эти слова надо придумать определения</h3>
+	<br>
+	<div id="game"></div>
+	<input value="Отправить" onclick="finishRound1()" type=button>
+</body>
+</html>

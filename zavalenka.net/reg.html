@@ -1,0 +1,19 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css.zaval">
+    <form action="1.php" method=POST>
+    <script src="cookie.js"></script>
+    <script>
+    	function apply(){
+			setCookie("player_name", document.getElementById("first_name").value, "none");
+			document.location.replace('round1.html'); 
+    	}
+    </script>
+</head>
+
+<h2> Интеллектуальная завалинка </h2>
+<h3> Представься </h3>
+<input type=text id="first_name" name="first_name" value=""><br><br>
+<input value="Играем" onclick='apply()' type="button">
+</html>
