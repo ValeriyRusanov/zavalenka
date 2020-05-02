@@ -1,24 +1,18 @@
 // server.js
-// Для начала установим зависимости.
-
-var gameState = {};
+var gameState = new Object;
 
 const http = require('http');
 const routing = require('./routing');
 
-var game = {};
-
 let server = new http.Server(function(req, res) {
-  // API сервера будет принимать только POST-запросы и только JSON, так что записываем
-  // всю нашу полученную информацию в переменную jsonString
-  var jsonString = '';
+  var jsonString = ''; // data started
   res.setHeader('Content-Type', 'application/json');
-  req.on('data', (data) => { // Пришла информация - записали.
+  req.on('data', (data) => { // new data
       jsonString += data;
   });
 
-  req.on('end', () => {// Информации больше нет - передаём её дальше.
-      routing.define( gameState, req, res, jsonString); // Функцию define мы ещё не создали.
+  req.on('end', () => { // data ended
+      routing.define( gameState, req, res, jsonString);
   });
 });
 server.listen(8000, 'localhost');
