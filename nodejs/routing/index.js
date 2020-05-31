@@ -1,4 +1,10 @@
 // /routing/index.js
+
+
+const url = require('url');
+const fs = require('fs');
+
+
 function createUUID() {
     // http://www.ietf.org/rfc/rfc4122.txt
     var s = [];
@@ -60,35 +66,35 @@ function createUUID() {
 // 
 const startGameRound1 = function( gameState, data )
 {
-	if( !( data instanceof JSONArray ) || data.lengh != 5 )	
+	if( !Array.isArray(data) || data.length != 5 )	
     {
         console.log("start game. invalid data");
 		return '{"error": "invalid data"}';
     }
 
     gameState = new Object;
-    gameState["state"] = "round1";
-    gameState["uuid"] = createUUID();
-    gameState["words"] = new Object;
-    gameState["votes"] = new Object;
+    gameState.state = "round1";
+    gameState.uuid = createUUID();
+    gameState.words = new Array;
+    gameState.votes = new Object;
 
-    var gameWords = gameState["words"];
+    var gameWords = gameState.words;
     for (var wordInfo of data) {
         var gameWord = new Object;
-        gameWord["word"] = wordInfo["word"];
-        gameWord["definition"] = new Object;
-        gameWord["definition"]["uuid"] = createUUID();
-        gameWord["definition"]["text"] = wordInfo["definition"];
+        gameWord.word = wordInfo.word;
+        gameWord.definition = new Object;
+        gameWord.definition.uuid = createUUID();
+        gameWord.definition.text = wordInfo.definition;
 
-        if (typeof wordInfo["fake1"] === 'undefined') {
-            gameWord["fake1"] = new Object;
-            gameWord["fake1"]["uuid"] = createUUID();
-            gameWord["fake1"]["text"] = wordInfo["fake1"];
+        if ( !(typeof wordInfo.fake1 === 'undefined')) {
+            gameWord.fake1 = new Object;
+            gameWord.fake1.uuid = createUUID();
+            gameWord.fake1.text = wordInfo.fake1;
         }
-        if (typeof wordInfo["fake2"] === 'undefined') {
-            gameWord["fake2"] = new Object;
-            gameWord["fake2"]["uuid"] = createUUID();
-            gameWord["fake2"]["text"] = wordInfo["fake2"];
+        if ( !(typeof wordInfo.fake2 === 'undefined')) {
+            gameWord.fake2 = new Object;
+            gameWord.fake2.uuid = createUUID();
+            gameWord.fake2.text = wordInfo.fake1;
         }
 
         gameWords.push(gameWord);   
@@ -212,7 +218,7 @@ const getWordsRound2 = function (gameState, playerUuid) {
 
         var defitions = new Object;
         for (const [key, value] of wordInfo) {
-            if (key != "word" && key != playerUuid) {
+            if (key !=  "word" && key != playerUuid) {
                 defitions["uuid"] = value["uuid"];
                 defitions["text"] = value["text"];
             }
@@ -248,8 +254,10 @@ const playerSendWordsRound2 = function (gameState, data) {
 }
 
 
-const define = function(gameState, req, res, postData) {
-	const requst = JSON.parse(json);
+const define_game = function(gameState, req, res, postData) {
+	const request = JSON.parse(postData);
+
+    console.log( "request type: " + request.type);
 
     if (typeof request["type"] === 'undefined') {
         res.end('{ "error":"no request type"}');
@@ -258,7 +266,7 @@ const define = function(gameState, req, res, postData) {
         res.end('{ "error":"no request data"}');
     }
     else if (request["type"] == "start game") {
-        res.end(startGameRound1(gameState, data));
+        res.end(startGameRound1(gameState, request.data));
     }
     else if (request["type"] == "start round2") {
         res.end(startGameRound2(gameState));
@@ -267,19 +275,19 @@ const define = function(gameState, req, res, postData) {
         res.end(stopGame(gameState));
     }
     else if (request["type"] == "new player") {
-        res.end(newPlayer(gameState, data));
+        res.end(newPlayer(gameState, request.data));
     }
     else if (request["type"] == "get words") {
         res.end(getWordsRound1(gameState));
     }
     else if (request["type"] == "send words") {
-        res.end(playerSendWordsRound1(gameState, data));
+        res.end(playerSendWordsRound1(gameState, request.data));
     }
     else if (request["type"] == "get definitions") {
         res.end(getWordsRound2(gameState));
     }
     else if (request["type"] == "send vote") {
-        res.end(playerSendWordsRound2(gameState, data));
+        res.end(playerSendWordsRound2(gameState, request.data));
     }
     else if (request["type"] == "get results") {
         res.end(JSON.stringify(gameState));
@@ -290,5 +298,84 @@ const define = function(gameState, req, res, postData) {
 
     console.log( JSON.stringify( gameState ) );
 }
+
+const lastFolderPart = function(path)
+{
+    var arr = path.split(/\//);
+    return arr[arr.length - 1];
+}
+
+const loadDynamic = function(path ,res)
+{
+    // Здесь мы пытаемся подключить модуль по ссылке. Если мы переходим на
+    // localhost:8000/api, то скрипт идёт по пути /routing/dynamic/api, и, если находит там
+    // index.js, берет его. Я знаю, что использовать тут try/catch не слишком правильно, и потом
+    // переделаю через fs.readFile, но пока у вас не загруженный проект, разницу в скорости
+    // вы не заметите.
+    let dynPath = './dynamic/' + path;
+    let routeDestination = require(dynPath);
+    res.end('We have API!');
+}
+
+const loadStatic = function(path, res)
+{
+    // Теперь записываем полный путь к server.js. Мне это особенно нужно, так как сервер будет
+    // висеть в systemd, и путь, о котором он будет думать, будет /etc/systemd/system/...
+    let prePath = __dirname;
+
+    // Находим наш путь к статическому файлу и пытаемся его прочитать.
+    // Если вы не знаете, что это за '=>', тогда прочитайте про стрелочные функции в es6,
+    // очень крутая штука.
+    let filePath = prePath + '/static/' + path;
+    console.log( "load static " + filePath);
+
+    fs.readFile( filePath, 'utf-8', (err, html) => {
+        // Если не находим файл, пытаемся загрузить нашу страницу 404 и отдать её.
+        // Если находим — отдаём, народ ликует и устраивает пир во имя царя-батюшки.
+        if(err) {
+            let nopath = '/var/www/html/nodejs/routing/nopage/index.html';
+            fs.readFile(nopath, (err , html) => {
+                if(!err) {
+                    res.writeHead(404, {'Content-Type': 'text/html'});
+                    res.end(html);
+                }
+                // На всякий случай напишем что-то в этом духе, мало ли, иногда можно случайно
+                // удалить что-нибудь и не заметить, но пользователи обязательно заметят.
+                else{
+                    let text = "Something went wrong. Please contact webmaster@forgetable.ru";
+                    res.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
+                    res.end(text);
+                }
+            });
+        }
+        else{
+            // Нашли файл, отдали, страница загружается.
+            res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+            res.end(html);
+        }
+    });
+}
+
+
+const define = function(gamestate, req, res, postData) {
+    console.log( req.url );
+    const urlParsed = url.parse(req.url, true);
+    let path = lastFolderPart( urlParsed.pathname );
+    
+    console.log( "path: " + path );
+
+    if ( path == "api" )
+    {
+        define_game( gamestate, req, res, postData );
+    }
+    else {
+        try {
+            loadDynamic( path, res );
+        }
+        catch (err) {
+            loadStatic( path, res );
+        }
+    }
+};
 
 exports.define = define;

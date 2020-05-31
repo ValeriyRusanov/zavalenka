@@ -2,19 +2,87 @@
 
 <head>
     <link rel="stylesheet" href="css.zaval">
-    <form action="start_game.php" method=POST>
     <script src="cookie.js"></script>
     <script>
-    	function apply(){
-			setCookie("player_name", document.getElementById("first_name").value, "none");
-			document.getElementById("game"); 
+    	function get_defitions() {
+            var words = [];
+            for ( var i = 0; i < 5; ++i )
+            {
+                var wordInfo = {};
+                wordInfo.word = document.getElementById("word" + i ).value;
+                wordInfo.definition = document.getElementById("word" + i + "_definition").value;
+                wordInfo.fake = document.getElementById("word" + i + "_fake").value;
+                words.push( wordInfo );
+            }
+
+            return words;
+    	}
+        function send_words( words ) {
+            var request = {};
+            request.type = "start game";
+            request.data = words;
+
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "POST", "zavalenka.net:8000", false ); // false for synchronous request
+            var str = JSON.stringify( request );
+            xmlHttp.send(  str );
+        }
+    	function apply() {
+    		var words = get_defitions();
+            send_words(words);
+    		window.location.href = 'game_info.html'
     	}
     </script>
 </head>
 
 <h2> Интеллектуальная завалинка </h2>
-<p> Напиши тут слова и определения </h3>
-<textarea type=text id="words" value=""></textarea><br>"
-<input value="Создать новую игру" type=submit>
-<input type=submit value="Отправить">
+<p> Напиши тут слова и определения </p>
+
+<div class="box">
+<textarea class="word" type=text id="word0" value=""></textarea><br>
+<div>
+<textarea class="word_defintion" type=text id="word0_definition" value=""></textarea><br>
+<textarea class="fake_defintion" type=text id="word0_fake" value=""></textarea><br>
+<br>
+</div>
+</div>
+
+<div class="box">
+<textarea class="word" type=text id="word1" value=""></textarea><br>
+<div>
+<textarea class="word_defintion" type=text id="word1_definition" value=""></textarea><br>
+<textarea class="fake_defintion" type=text id="word1_fake" value=""></textarea><br>
+<br>
+</div>
+</div>
+
+<div class="box">
+<textarea class="word" type=text id="word2" value=""></textarea><br>
+<div>
+<textarea class="word_defintion" type=text id="word2_definition" value=""></textarea><br>
+<textarea class="fake_defintion" type=text id="word2_fake" value=""></textarea><br>
+<br>
+</div>
+</div>
+
+<div class="box">
+<textarea class="word" type=text id="word3" value=""></textarea><br>
+<div>
+<textarea class="word_defintion" type=text id="word3_definition" value=""></textarea><br>
+<textarea class="fake_defintion" type=text id="word3_fake" value=""></textarea><br>
+<br>
+</div>
+</div>
+
+<div class="box">
+<textarea class="word" type=text id="word4" value=""></textarea><br>
+<div>
+<textarea class="word_defintion" type=text id="word4_definition" value=""></textarea><br>
+<textarea class="fake_defintion" type=text id="word4_fake" value=""></textarea><br>
+<br>
+</div>
+</div>
+
+
+<input value="Создать новую игру" onclick="apply()" type=button>
 </html>
