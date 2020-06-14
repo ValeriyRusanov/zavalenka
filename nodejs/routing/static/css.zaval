@@ -1,0 +1,40 @@
+body {
+	background: #b1e697;
+	font-size: 100%;
+}
+h2 {
+	display: flex;
+	justify-content: center;
+	font-family: Georgia, serif;
+	text-shadow: 3px 3px 3px #eee,
+                 5px 5px 5px #fad201;
+	font-size: 300%;
+	padding-top: 50px;
+} 
+.box {
+	display: flex;
+	align-items: flex-start; 
+	flex-flow: row nowrap;
+	justify-content: center;
+	width: 70%;
+}
+
+p {
+    display: flex;
+	justify-content: center;
+	width: 70%;
+	font-size: 180%;
+	font-weight: bold;
+}
+
+.word_defintion, .word {
+	font-size: 150%;
+	border: solid 3px green;
+}
+.fake_defintion {
+    font-size: 150%;
+	border: solid 3px #fad201;
+}
+input{
+	
+}

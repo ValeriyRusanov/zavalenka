@@ -1,0 +1,62 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css.zaval">
+    <form action="round1.php" method=POST>
+    <script src="cookie.js"></script>
+    <script>
+    	function getWordsRound2()
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "POST", "/api", false ); // false for synchronous request
+            var request = {};
+            request.type = "get definitions";
+            request.data = {};
+            request.data.playerUuid = "dummy uuid";
+            xmlHttp.send( JSON.stringify( request ) );
+          
+            var resp = JSON.parse(xmlHttp.responseText);
+            var gameDiv = document.getElementById("game");
+            gameDiv.innerHTML = "";
+            for ( var i = 0; i < resp.length; ++i)
+            {
+                var div = document.createElement("div");
+                for (const [uuid, def] of Object.entries(resp[i])) {
+                    div.innerHTML += "<input type=\"radio\" uuid=\"" + uuid + "\" value=\"" + def + "\"/>";
+                }
+                gameDiv.appendChild( div );
+            }
+        }
+
+    	function setUserName(){
+    		//alert( getCookie("player_name"));
+			let value = document.getElementById("player_name").innerHTML;
+			document.getElementById("player_name").innerHTML = getCookie("player_name") + ", " + "выбери настоящее определение";
+    	}
+    	function onLoad(){
+    		setUserName();
+    		getWordsRound2();
+    	}
+    	function finishRound2()
+    	{
+    		let json = new Object();
+    		json["user"] = getCookie("user");
+    		json["userName"] = getCookie("player_name");
+    		json["words"] = new Object();
+
+		    var xmlHttp = new XMLHttpRequest();
+		    xmlHttp.open( "POST", "round2.php", false ); // false for synchronous request
+		    xmlHttp.send( json );
+    	}
+    </script>
+</head>
+<body onload="onLoad()">
+
+	<h2> Интеллектуальная завалинка </h2>
+	<h3 id="player_name">выбери настоящее определение</h3>
+	<br>
+	<div id="game"></div>
+    <input value="обновить" onclick="onLoad()" type=button>
+	<input value="Отправить" onclick="finishRound2()" type=button>
+</body>
+</html>

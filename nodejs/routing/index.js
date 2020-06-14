@@ -72,7 +72,6 @@ const startGameRound1 = function( gameState, data )
 		return '{"error": "invalid data"}';
     }
 
-    gameState = new Object;
     gameState.state = "round1";
     gameState.uuid = createUUID();
     gameState.words = new Array;
@@ -80,30 +79,49 @@ const startGameRound1 = function( gameState, data )
 
     var gameWords = gameState.words;
     for (var wordInfo of data) {
-        var gameWord = new Object;
+        var gameWord = {};
         gameWord.word = wordInfo.word;
-        gameWord.definition = new Object;
-        gameWord.definition.uuid = createUUID();
-        gameWord.definition.text = wordInfo.definition;
+        gameWord["definition"] = new Object;
+        gameWord["definition"].uuid = createUUID();
+        gameWord["definition"].text = wordInfo.definition;
 
         if ( !(typeof wordInfo.fake1 === 'undefined')) {
-            gameWord.fake1 = new Object;
-            gameWord.fake1.uuid = createUUID();
-            gameWord.fake1.text = wordInfo.fake1;
+            gameWord["fake1"] = new Object;
+            gameWord["fake1"].uuid = createUUID();
+            gameWord["fake1"].text = wordInfo.fake1;
         }
         if ( !(typeof wordInfo.fake2 === 'undefined')) {
-            gameWord.fake2 = new Object;
-            gameWord.fake2.uuid = createUUID();
-            gameWord.fake2.text = wordInfo.fake1;
+            gameWord["fake2"] = new Object;
+            gameWord["fake2"].uuid = createUUID();
+            gameWord["fake2"].text = wordInfo.fake1;
         }
 
         gameWords.push(gameWord);   
     }
 
-    console.log("start game");
+    console.log("start game result");
     console.log(JSON.stringify(gameState));
     return "succeed";
 }
+
+const getGameState = function( gameState )
+{
+    // in future we are goint to verify access
+    var res = {};
+    res.uuid = gameState.uuid;
+    res.state = gameState.state;
+    console.log("get game state");
+    console.log(JSON.stringify(res));
+
+    return JSON.stringify(res);
+}
+
+const getGameInfo = function( gameState, data )
+{
+    // in future we are goint to verify access
+    return JSON.stringify(gameState);
+}
+
 
 const startGameRound2 = function (gameState) {
     gameState["state"] = "round2";
@@ -137,15 +155,19 @@ const newPlayer = function (gameState, data) {
 // returns array
 // [ "word1", "word2",... ]
 const getWordsRound1 = function (gameState) {
-    if (gameState["state"] != "round1") {
+    if (gameState.state != "round1") {
         console.log("invalid game status");
         return "Error: invalid game status";
     }
 
-    var result = new Array;
+    var result = [];
+    console.log("words" );
+    console.log( JSON.stringify( gameState.words ) );
 
-    for (var wordInfo in gameState["words"]) {
-        result.push(wordInfo["word"]);
+    for ( var i = 0; i < gameState.words.length; ++i) {
+        console.log("word");
+        console.log( JSON.stringify( gameState.words[i] ) );
+        result.push(gameState.words[i].word);
     }
 
     console.log("player request words");
@@ -160,28 +182,26 @@ const getWordsRound1 = function (gameState) {
 // save as part of game words
 
 const playerSendWordsRound1 = function (gameState, data) {
-    if (gameState["state"] != "round1") {
+    if (gameState.state != "round1") {
         console.log("invalid game status");
         return "Error: invalid game status";
     }
 
-    var playerId = gameState["players"][data["player uuid"]];
+    var playerId = data["player uuid"];
     if (typeof playerId === undefined) {
         console.log("invalid player");
         return "Error: invalid game status";
     }
 
-    var gameWords = gameState["words"];
-    var dataWords = data["words"];
-    for (var i = 0; i < gameWords.lengh && i < dataWords.lengh; ++i) {
-        if (dataWords[i] == "") {
-            continue;
-        }
+    var gameWords = gameState.words;
+    var dataWords = data.words;
+    for (var i = 0; i < gameWords.length && i < dataWords.length; ++i) {
+        console.log("Add word " + playerId + " " + dataWords[i]);
 
-        var playerWord = new Object;
-        playerWord["uuid"] = createUUID();
-        playerWord["text"] = dataWords[i];
-        gameWords[i][playerId] = playerWord;
+        gameWords[i][playerId] = new Object;
+        gameWords[i][playerId].uuid = createUUID();
+        gameWords[i][playerId].text = dataWords[i];
+        
     }
 
     console.log("player send words");
@@ -205,25 +225,27 @@ const playerSendWordsRound1 = function (gameState, data) {
 //           }, ...
 //         ]
 //
-const getWordsRound2 = function (gameState, playerUuid) {
-    if (gameState["state"] != "round2") {
+const getWordsRound2 = function (gameState, data) {
+    if (gameState.state != "round2") {
         console.log("invalid game status");
         return "Error: invalid game status";
     }
 
-    var result = new Array;
-    for (var wordInfo in gameState["words"]) {
-        var dataWord = new Object;
-        dataWord["word"] = wordInfo["word"];
+    var playerUuid = data.playerUuid;
+    var result = [];
+    for ( var i in gameState.words) {
+        var wordInfo = gameState.words[i];
+        var dataWord = {};
+        dataWord.word = wordInfo.word;
 
-        var defitions = new Object;
-        for (const [key, value] of wordInfo) {
-            if (key !=  "word" && key != playerUuid) {
-                defitions["uuid"] = value["uuid"];
-                defitions["text"] = value["text"];
+        var defitions = {};
+        for (var key in wordInfo) {
+            if ( key != "word" && key != playerUuid) {
+                defitions.uuid = wordInfo[key].uuid;
+                defitions.text = wordInfo[key].text;
             }
         }
-        dataWord["definitions"] = defitions;
+        dataWord.definition = defitions;
         result.push(dataWord);
     }
 
@@ -255,18 +277,22 @@ const playerSendWordsRound2 = function (gameState, data) {
 
 
 const define_game = function(gameState, req, res, postData) {
+    console.log( "post data: " + postData);
+
 	const request = JSON.parse(postData);
 
     console.log( "request type: " + request.type);
+    console.log( "game state:\n\t" + JSON.stringify(gameState) );
 
     if (typeof request["type"] === 'undefined') {
         res.end('{ "error":"no request type"}');
     }
-    else if (typeof request["data"] === 'undefined') {
-        res.end('{ "error":"no request data"}');
+    // get requests 
+    else if (request["type"] == "game state") {
+        res.end(getGameState(gameState));
     }
-    else if (request["type"] == "start game") {
-        res.end(startGameRound1(gameState, request.data));
+    else if (request["type"] == "game info") {
+        res.end(getGameInfo(gameState, request.data));
     }
     else if (request["type"] == "start round2") {
         res.end(startGameRound2(gameState));
@@ -274,28 +300,38 @@ const define_game = function(gameState, req, res, postData) {
     else if (request["type"] == "stop game") {
         res.end(stopGame(gameState));
     }
-    else if (request["type"] == "new player") {
-        res.end(newPlayer(gameState, request.data));
-    }
     else if (request["type"] == "get words") {
         res.end(getWordsRound1(gameState));
+    }
+    else if (request["type"] == "get results") {
+        res.end(JSON.stringify(gameState));
+    }
+
+    // post request
+    else if (typeof request["data"] === 'undefined') {
+        res.end('{ "error":"no request data"}');
+    }
+    else if (request["type"] == "start game") {
+        res.end(startGameRound1(gameState, request.data));
+    }
+    else if (request["type"] == "new player") {
+        res.end(newPlayer(gameState, request.data));
     }
     else if (request["type"] == "send words") {
         res.end(playerSendWordsRound1(gameState, request.data));
     }
     else if (request["type"] == "get definitions") {
-        res.end(getWordsRound2(gameState));
+        res.end(getWordsRound2(gameState, request.data));
     }
     else if (request["type"] == "send vote") {
         res.end(playerSendWordsRound2(gameState, request.data));
-    }
-    else if (request["type"] == "get results") {
-        res.end(JSON.stringify(gameState));
     }
     else {
         res.end('{"error": "unknown request type"}');
     }
 
+
+    console.log( "After" );
     console.log( JSON.stringify( gameState ) );
 }
 
@@ -366,7 +402,14 @@ const define = function(gamestate, req, res, postData) {
 
     if ( path == "api" )
     {
-        define_game( gamestate, req, res, postData );
+        try{
+            define_game( gamestate, req, res, postData );
+        }
+        catch {
+            let text = "Something went wrong. Please contact webmaster@forgetable.ru";
+            res.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
+            res.end(text);
+        }
     }
     else {
         try {

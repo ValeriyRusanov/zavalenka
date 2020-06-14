@@ -1,0 +1,91 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css.zaval">
+    <script src="cookie.js"></script>
+    <script>
+
+        function loaded() {
+          update();
+        };
+    	function updateGameInfo() {
+            var request = {};
+            request.type = "game info";
+
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "POST", "/api", false ); // false for synchronous request
+            var str = JSON.stringify( request );
+            xmlHttp.send( str );
+            if (xmlHttp.status == 200)
+            {
+                document.getElementById("status").innerHTML = xmlHttp.responseText;
+            }
+    	}
+
+        function update(){
+            var state = getGameState();
+            var button = document.getElementById("nextRound");
+            if ( state == "round1" ) {
+                updateGameInfo();
+                button.value = "round2";
+                button.disabled = false;
+            }
+            else if ( state == "round2" ) {
+                updateGameInfo();
+                button.value = "stop game";
+                button.disabled = false;
+            }
+            else if ( state == "ended" ) {
+                updateGameInfo();
+                button.value = "already stopped";
+                button.disabled = true;
+            }
+
+        }
+
+        function newGame() {
+            window.location.href = 'start_game.html'
+        }
+
+        function getGameState(){
+            var request = {};
+            request.type = "game state";
+
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "POST", "/api", false ); // false for synchronous request
+            var str = JSON.stringify( request );
+            xmlHttp.send( str );
+            if (xmlHttp.status == 200)
+            {
+                var responce = JSON.parse( xmlHttp.responseText );
+                return responce.state;
+            }
+        }
+
+        function nextRound() {
+            var state = getGameState();
+            if ( state == "round1" || state == "round2" ) {
+                var request = {};
+                request.type = state == "round1" ? "start round2" : "stop game";
+
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.open( "POST", "/api", false ); // false for synchronous request
+                var str = JSON.stringify( request );
+                xmlHttp.send( str ); 
+
+                update();  
+            }
+        }
+
+    </script>
+</head>
+
+<body onload="loaded()">
+    <h2> Интеллектуальная завалинка </h2>
+    <p> Текущее состояние игры: </h3>
+    <p id="status"> </p>
+    <input id="update" value="Обновить статус" onclick="update()" type=button>
+    <input id="newGame" value="Новая игра" onclick="newGame()" type=button>
+    <input id="nextRound" value="Следующий шаг" onclick="nextRound()" type=button>
+</body>
+</html>
