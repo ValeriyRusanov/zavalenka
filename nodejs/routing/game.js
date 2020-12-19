@@ -27,25 +27,63 @@ function createUUID() {
 //                 ... },
 //  "words" :  
 //            [  {"word": "word text",
-//               "defition": 
-//                 { "uuid": "1234-..",
-//                   "text": "def long text"},
-//               "fake1":
-//                 { "uuid": "1234-..",
-//                   "text": "fake1 long text"},
-//               "fake2":
-//                 { "uuid": "1234-..",
-//                   "text": "fake2 long text"},
-//               "player uuid":
-//                 { "uuid": "word uuid 1234-..",
-//                   "text": "player fake long text"},
+//               "defitions": 
+//                 { 
+//                  "definition" : { "uuid": "1234-..", "text": "def long text"},
+//                  "fake1": { "uuid": "1234-..", "text": "fake1 long text"},
+//                  "fake2": { "uuid": "1234-..", "text": "fake2 long text"},
+//                  "player uuid": { "uuid": "word uuid 1234-..", "text": "player fake long text"},
 //                  ...},
-//             ...] // end words
-// "votes" : {
-//             "player uuid1" : [ "word1 uuid", "word2 uuid" ... ],
-//             "player uuid2" : [ "word1 uuid", "word2 uuid" ... ],
+//                 } // end definitions
+//                "votes"{
+//                   "player uuid1" : [ "word1 uuid", "word2 uuid" ... ],
+//                   "player uuid2" : [ "word1 uuid", "word2 uuid" ... ],
+//                }
+//          ...] // end words
 //           },
 // } // end game state
+
+
+class Player {
+    constuctor( name ) {
+        this.id = createUUID(); 
+        this.name = name;
+        this.color = "";
+    }
+}
+
+class PlayerInGame {
+    constuctor( id ) {
+        this.id = id; 
+        this.state = "Joined";
+    }   
+}
+
+class Word {
+    constuctor( text ) {
+        this.id = createUUID(); 
+        this.text = text;
+        this.definitions = Array;
+    }
+}
+
+class Definition {
+    constuctor( text, playerId ) {
+        this.id = createUUID();     // definition guid
+        this.text = text;           // defintion text
+        this.playerId = playerId;   // id of play that wrote that definition
+        this.votes = Array;         // set of id of players that vote for that definition
+    }
+}
+
+
+class Game {
+    constuctor() {
+        this.state = "Not started";
+        this.id = createUUID();
+        this.words = Array;
+        this.players = Array;
+    }
 
 //////////////////////////////////////////////////////////////////////
 // admin functions
@@ -64,80 +102,60 @@ function createUUID() {
 //  ...]
 //
 // 
-const startGameRound1 = function( gameState, data )
+startRound1( data )
 {
-	if( !Array.isArray(data) || data.length != 5 )	
+	if( !Array.isArray(data) )	
     {
         console.log("start game. invalid data");
 		return '{"error": "invalid data"}';
     }
 
-    gameState.state = "round1";
-    gameState.uuid = createUUID();
-    gameState.words = new Array;
-    gameState.votes = new Object;
-
-    var gameWords = gameState.words;
+    this.words.length = 0;
     for (var wordInfo of data) {
-        var gameWord = {};
-        gameWord.word = wordInfo.word;
-        gameWord["definition"] = new Object;
-        gameWord["definition"].uuid = createUUID();
-        gameWord["definition"].text = wordInfo.definition;
+        var word = new Word( wordInfo["word"] );
+        word.definitions.push_back( new Definition(wordInfo.definition. "True") );
 
         if ( !(typeof wordInfo.fake1 === 'undefined')) {
-            gameWord["fake1"] = new Object;
-            gameWord["fake1"].uuid = createUUID();
-            gameWord["fake1"].text = wordInfo.fake1;
+            word.definitions.push_back( new Definition(wordInfo.fake1. "Fake1") );
         }
         if ( !(typeof wordInfo.fake2 === 'undefined')) {
-            gameWord["fake2"] = new Object;
-            gameWord["fake2"].uuid = createUUID();
-            gameWord["fake2"].text = wordInfo.fake1;
+            word.definitions.push_back( new Definition(wordInfo.fake2. "Fake2") );
         }
-
-        gameWords.push(gameWord);   
+        this.words.push( word );
     }
 
+    this.state = "round1";
     console.log("start game result");
-    console.log(JSON.stringify(gameState));
+    console.log(JSON.stringify(game));
     return "succeed";
 }
 
-const getGameState = function( gameState )
+startRound2() {
+    this.state = "round2";
+    console.log("start round2");
+}
+
+stopGame() {
+    this.state = "ended";
+    console.log("end game");
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// player functions
+getStateSimple()
 {
     // in future we are goint to verify access
     var res = {};
-    res.uuid = gameState.uuid;
-    res.state = gameState.state;
+    res.uuid = this.id;
+    res.state = this.state;
     console.log("get game state");
     console.log(JSON.stringify(res));
 
     return JSON.stringify(res);
 }
 
-const getGameInfo = function( gameState, data )
-{
-    // in future we are goint to verify access
-    return JSON.stringify(gameState);
-}
-
-
-const startGameRound2 = function (gameState) {
-    gameState["state"] = "round2";
-    console.log("start round2");
-    return "succeed";
-}
-
-const stopGame = function (gameState) {
-    gameState["state"] = "ended";
-    console.log("end game");
-    return "succeed";
-}
-
-//////////////////////////////////////////////////////////////////////
-// player functions
-const newPlayer = function (gameState, data) {
+newPlayer( data ) {
     if (typeof gameState["players"] === 'undefined') {
         gameState["players"] = new Object;
     }
@@ -275,6 +293,8 @@ const playerSendWordsRound2 = function (gameState, data) {
     console.log("player = " + data.playerUuid );
     gameState.votes[data.playerUuid] = { ...data.votes};
     return "succeed";
+}
+
 }
 
 

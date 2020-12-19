@@ -18,11 +18,14 @@
             var resp = JSON.parse(xmlHttp.responseText);
             var gameDiv = document.getElementById("game");
             gameDiv.innerHTML = "";
-            for ( var i = 0; i < resp.length; ++i)
-            {
+            for ( var i = 0; i < resp.length; ++i) {
                 var div = document.createElement("div");
-                for (const [uuid, def] of Object.entries(resp[i])) {
-                    div.innerHTML += "<input type=\"radio\" uuid=\"" + uuid + "\" value=\"" + def + "\"/>";
+                div.innerHTML = "<p>" + resp[i].word + "</p>";
+
+                for (const definition of resp[i].definitions) {
+                    var tag = "<input name=\"" + i + "\" type=\"radio\" id=\"" + definition.uuid + "\" value=\"" + definition.text + "\">"
+                    tag += "<label for=\"" + definition.uuid + "\">" + definition.text + "</label><br>";
+                    div.innerHTML += tag;
                 }
                 gameDiv.appendChild( div );
             }
@@ -37,16 +40,37 @@
     		setUserName();
     		getWordsRound2();
     	}
+        function getVotes()
+        {
+            var votes = {};
+            var gameDiv = document.getElementById("game");
+            for ( div of gameDiv.childNodes) {
+                var word = "";
+                var vote = "";
+                for ( sub of div.childNodes) {
+                    if ( sub.tagName == "P")
+                    {
+                        word = sub.innerHTML;
+                    }
+                    if ( sub.tagName == "INPUT" && (sub.checked || vote == "" ))
+                    {
+                        vote = sub.id;
+                    }
+                }
+                votes[word] = vote;
+            }
+            return votes;
+        }
     	function finishRound2()
     	{
-    		let json = new Object();
-    		json["user"] = getCookie("user");
-    		json["userName"] = getCookie("player_name");
-    		json["words"] = new Object();
-
-		    var xmlHttp = new XMLHttpRequest();
-		    xmlHttp.open( "POST", "round2.php", false ); // false for synchronous request
-		    xmlHttp.send( json );
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "POST", "/api", false ); // false for synchronous request
+            var request = {};
+            request.type = "send vote";
+            request.data = {};
+            request.data.playerUuid = "dummy uuid";
+            request.data.votes = getVotes();
+            xmlHttp.send( JSON.stringify( request ) );
     	}
     </script>
 </head>
